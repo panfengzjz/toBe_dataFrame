@@ -1,4 +1,5 @@
 # coding: utf-8
+import time
 import numpy as np
 import pandas as pd
 from pandas import DataFrame
@@ -15,6 +16,7 @@ def split_origin_data(data, saveFileName):
         df = data[data['项目代号']==i]
         df.to_excel(writer, i)
     writer.save()
+    print("split_origin_data finish")
     
 def search_data_and_give_result(fileName, nameSet):
     writer = pd.ExcelWriter("new_"+fileName)
@@ -23,17 +25,17 @@ def search_data_and_give_result(fileName, nameSet):
     data.set_index("姓名", inplace=True)
 
     f = pd.ExcelFile(fileName)
+    d = pd.read_excel(fileName, sheet_name=f.sheet_names)
     for i in f.sheet_names:
-        data[i] = np.nan
         if (i == "ACTH") or (i == "CORT"):
             #暂时先不操作，存在比较大的问题
             #data[i+"_备注1"] = np.nan
             #data[i+"_备注"] = np.nan
             continue
-        d = pd.read_excel(fileName, sheetname=i)
-        d.set_index("姓名", inplace=True)
-        for name in d.index:
-            cell = d.loc[name, "数字结果"]
+        tmp_d = d.get(i)
+        tmp_d.set_index("姓名", inplace=True)
+        for name in tmp_d.index:
+            cell = tmp_d.loc[name, "数字结果"]
             try:
                 data.loc[name, i] = cell.values[-1]
             except AttributeError:
@@ -41,15 +43,21 @@ def search_data_and_give_result(fileName, nameSet):
 
     data.to_excel(writer)
     writer.save()
+    print("search_data_and_give_result finish")
 
 if __name__ == "__main__":
-    fileName = "肝穿与DM激素.xlsx"
+    start_time = time.time()
 
-    sheetName = "糖尿病"
+    fileName = "内分泌科化验结果.xlsx"
+    sheetName = "Sheet1"
     data = pd.read_excel(fileName, sheet_name=sheetName)
+    print("load data complete")
+    print("time cost: ", time.time() - start_time)
     nameSet = get_name_set(data)
     #split_origin_data(data, sheetName+".xlsx")
+    #print("time cost: ", time.time() - start_time)
     search_data_and_give_result(sheetName+".xlsx", nameSet)
+    print("time cost: ", time.time() - start_time)
     
     #sheetName = "肝穿"
     #data = pd.read_excel(fileName, sheet_name=sheetName)
